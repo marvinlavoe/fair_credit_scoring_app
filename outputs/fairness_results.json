@@ -1,0 +1,122 @@
+{
+  "logistic_regression": [
+    {
+      "sensitive_attribute": "sex",
+      "demographic_parity_difference": 0.2311827956989247,
+      "equalized_odds_difference": 0.334841628959276,
+      "disparate_impact_ratio": 0.653225806451613,
+      "disparate_impact_interpretation": "needs review",
+      "selection_rate_by_group": {
+        "female": 0.43548387096774194,
+        "male": 0.6666666666666666
+      },
+      "true_positive_rate_by_group": {
+        "female": 0.6944444444444444,
+        "male": 0.75
+      },
+      "false_positive_rate_by_group": {
+        "female": 0.07692307692307693,
+        "male": 0.4117647058823529
+      }
+    },
+    {
+      "sensitive_attribute": "age_group",
+      "demographic_parity_difference": 0.19761273209549074,
+      "equalized_odds_difference": 0.20648343904157862,
+      "disparate_impact_ratio": 0.6816239316239316,
+      "disparate_impact_interpretation": "needs review",
+      "selection_rate_by_group": {
+        "25_and_above": 0.6206896551724138,
+        "below_25": 0.4230769230769231
+      },
+      "true_positive_rate_by_group": {
+        "25_and_above": 0.751937984496124,
+        "below_25": 0.5454545454545454
+      },
+      "false_positive_rate_by_group": {
+        "25_and_above": 0.24444444444444444,
+        "below_25": 0.3333333333333333
+      }
+    }
+  ],
+  "tabnet_baseline": [
+    {
+      "sensitive_attribute": "sex",
+      "demographic_parity_difference": 0.14492753623188404,
+      "equalized_odds_difference": 0.1990950226244344,
+      "disparate_impact_ratio": 0.7752808988764045,
+      "disparate_impact_interpretation": "needs review",
+      "selection_rate_by_group": {
+        "female": 0.5,
+        "male": 0.644927536231884
+      },
+      "true_positive_rate_by_group": {
+        "female": 0.75,
+        "male": 0.7403846153846154
+      },
+      "false_positive_rate_by_group": {
+        "female": 0.15384615384615385,
+        "male": 0.35294117647058826
+      }
+    },
+    {
+      "sensitive_attribute": "age_group",
+      "demographic_parity_difference": 0.24756852343059238,
+      "equalized_odds_difference": 0.17777777777777778,
+      "disparate_impact_ratio": 0.6083916083916084,
+      "disparate_impact_interpretation": "needs review",
+      "selection_rate_by_group": {
+        "25_and_above": 0.632183908045977,
+        "below_25": 0.38461538461538464
+      },
+      "true_positive_rate_by_group": {
+        "25_and_above": 0.7441860465116279,
+        "below_25": 0.7272727272727273
+      },
+      "false_positive_rate_by_group": {
+        "25_and_above": 0.3111111111111111,
+        "below_25": 0.13333333333333333
+      }
+    }
+  ],
+  "tabnet_debiased": [
+    {
+      "sensitive_attribute": "sex",
+      "demographic_parity_difference": 0.09490416082281439,
+      "equalized_odds_difference": 0.02488687782805432,
+      "disparate_impact_ratio": 0.8560794044665012,
+      "disparate_impact_interpretation": "acceptable",
+      "selection_rate_by_group": {
+        "female": 0.5645161290322581,
+        "male": 0.6594202898550725
+      },
+      "true_positive_rate_by_group": {
+        "female": 0.7777777777777778,
+        "male": 0.7788461538461539
+      },
+      "false_positive_rate_by_group": {
+        "female": 0.2692307692307692,
+        "male": 0.29411764705882354
+      }
+    },
+    {
+      "sensitive_attribute": "age_group",
+      "demographic_parity_difference": 0.45888594164456237,
+      "equalized_odds_difference": 0.35165609584214236,
+      "disparate_impact_ratio": 0.3346153846153846,
+      "disparate_impact_interpretation": "needs review",
+      "selection_rate_by_group": {
+        "25_and_above": 0.6896551724137931,
+        "below_25": 0.23076923076923078
+      },
+      "true_positive_rate_by_group": {
+        "25_and_above": 0.8062015503875969,
+        "below_25": 0.45454545454545453
+      },
+      "false_positive_rate_by_group": {
+        "25_and_above": 0.35555555555555557,
+        "below_25": 0.06666666666666667
+      }
+    }
+  ]
+}

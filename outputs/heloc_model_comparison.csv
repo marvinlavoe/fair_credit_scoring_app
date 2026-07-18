@@ -1,0 +1,3 @@
+Model,AUC-ROC,Weighted F1,Demographic Parity Difference,Equalized Odds Difference,Disparate Impact Ratio,Accuracy,Comment
+Logistic Regression,0.7982197802197802,0.7213251172679243,,,,0.72131931166348,Reference model.
+TabNet Baseline,0.7458489010989011,0.6808628629715346,,,,0.6821223709369025,Reference model.

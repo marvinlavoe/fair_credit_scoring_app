@@ -1,0 +1,19 @@
+{
+  "dataset": "German Credit",
+  "dataset_key": "german",
+  "target_col": "target",
+  "sensitive_cols": [
+    "sex",
+    "age_group"
+  ],
+  "random_state": 42,
+  "test_size": 0.2,
+  "debiasing_method": "fairness-aware reweighting",
+  "outputs": {
+    "metrics": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\metrics.json",
+    "fairness_results": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\fairness_results.json",
+    "model_comparison": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\model_comparison.csv",
+    "shap_summary": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\shap_summary.png",
+    "shap_waterfall": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\shap_waterfall.png"
+  }
+}

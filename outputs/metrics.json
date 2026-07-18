@@ -1,0 +1,23 @@
+{
+  "logistic_regression": {
+    "accuracy": 0.735,
+    "weighted_f1": 0.7439907993099482,
+    "auc_roc": 0.8288095238095238
+  },
+  "tabnet_baseline": {
+    "accuracy": 0.74,
+    "weighted_f1": 0.7485714285714287,
+    "auc_roc": 0.7947619047619047,
+    "balanced_accuracy": 0.7380952380952381,
+    "decision_threshold": 0.6200000000000001,
+    "positive_prediction_rate": 0.6
+  },
+  "tabnet_debiased": {
+    "accuracy": 0.76,
+    "weighted_f1": 0.7662215239591517,
+    "auc_roc": 0.7833333333333333,
+    "balanced_accuracy": 0.7476190476190476,
+    "decision_threshold": 0.6300000000000001,
+    "positive_prediction_rate": 0.63
+  }
+}

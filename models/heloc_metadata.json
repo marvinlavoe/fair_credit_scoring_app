@@ -1,0 +1,16 @@
+{
+  "dataset": "HELOC",
+  "dataset_key": "heloc",
+  "target_col": "target",
+  "sensitive_cols": [],
+  "random_state": 42,
+  "test_size": 0.2,
+  "debiasing_method": "not applied",
+  "outputs": {
+    "metrics": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\heloc_metrics.json",
+    "fairness_results": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\heloc_fairness_results.json",
+    "model_comparison": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\heloc_model_comparison.csv",
+    "shap_summary": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\heloc_shap_summary.png",
+    "shap_waterfall": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\heloc_shap_waterfall.png"
+  }
+}

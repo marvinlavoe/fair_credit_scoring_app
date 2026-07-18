@@ -1,0 +1,12 @@
+streamlit
+pandas
+numpy
+scikit-learn
+matplotlib
+plotly
+shap
+fairlearn
+torch
+pytorch-tabnet
+joblib
+ucimlrepo
