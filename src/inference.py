@@ -7,16 +7,19 @@ import joblib
 import numpy as np
 import pandas as pd
 from pytorch_tabnet.tab_model import TabNetClassifier
+from sklearn.metrics import accuracy_score, f1_score
 
 try:
     from .config import DEFAULT_DATASET, get_dataset_config, get_model_paths, get_output_paths
     from .explainability import generate_shap_explanation as generate_kernel_shap_explanation
     from .explainability import get_top_feature_contributions
+    from .fairness import evaluate_fairness
     from .preprocess import preprocess_data
 except ImportError:
     from config import DEFAULT_DATASET, get_dataset_config, get_model_paths, get_output_paths
     from explainability import generate_shap_explanation as generate_kernel_shap_explanation
     from explainability import get_top_feature_contributions
+    from fairness import evaluate_fairness
     from preprocess import preprocess_data
 
 
@@ -330,11 +333,46 @@ def get_fairness_metrics(dataset: str = DEFAULT_DATASET):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+@lru_cache(maxsize=2)
+def _majority_class_row(dataset: str) -> dict:
+    data = preprocess_data(dataset=dataset, save_preprocessor=False)
+    y_test = np.asarray(data["y_test"], dtype=int)
+    majority_label = int(np.bincount(y_test).argmax())
+    y_pred = np.full(y_test.shape, majority_label, dtype=int)
+    fairness = evaluate_fairness(y_test, y_pred, data["A_test"])
+    primary_fairness = next(
+        (item for item in fairness if item.get("sensitive_attribute") == "sex"),
+        fairness[0] if fairness else {},
+    )
+    return {
+        "Model": "Majority-Class Baseline",
+        "AUC-ROC": 0.5,
+        "Weighted F1": float(f1_score(y_test, y_pred, average="weighted")),
+        "Demographic Parity Difference": primary_fairness.get(
+            "demographic_parity_difference", np.nan
+        ),
+        "Equalized Odds Difference": primary_fairness.get(
+            "equalized_odds_difference", np.nan
+        ),
+        "Disparate Impact Ratio": primary_fairness.get(
+            "disparate_impact_ratio", np.nan
+        ),
+        "Accuracy": float(accuracy_score(y_test, y_pred)),
+        "Comment": f"Always predicts class {majority_label} (Creditworthy).",
+    }
+
+
 def get_model_comparison(dataset: str = DEFAULT_DATASET):
     path = get_output_paths(dataset)["model_comparison"]
     if not path.exists():
         return pd.DataFrame()
-    return pd.read_csv(path)
+    comparison = pd.read_csv(path)
+    if "Majority-Class Baseline" not in comparison.get("Model", pd.Series(dtype=str)).values:
+        comparison = pd.concat(
+            [pd.DataFrame([_majority_class_row(dataset)]), comparison],
+            ignore_index=True,
+        )
+    return comparison
 
 
 def get_metric_comparison(dataset: str = DEFAULT_DATASET) -> pd.DataFrame:
