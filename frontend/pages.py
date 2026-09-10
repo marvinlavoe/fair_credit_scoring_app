@@ -116,10 +116,18 @@ def _prettify_shap_feature_name(feature_name: str) -> str:
 
     if feature_name.startswith("categorical__"):
         payload = feature_name.split("categorical__", 1)[1]
-        if "_" in payload:
-            key, raw_value = payload.split("_", 1)
-            key_label = key.replace("_", " ").title()
-            mapped_value = CATEGORY_LABEL_MAP.get(key, {}).get(raw_value)
+        matching_key = next(
+            (
+                key
+                for key in CATEGORY_LABEL_MAP
+                if payload.startswith(f"{key}_")
+            ),
+            None,
+        )
+        if matching_key is not None:
+            raw_value = payload[len(matching_key) + 1 :]
+            key_label = matching_key.replace("_", " ").title()
+            mapped_value = CATEGORY_LABEL_MAP[matching_key].get(raw_value)
             if mapped_value is None:
                 mapped_value = raw_value.replace("_", " ").title()
             return f"{key_label} = {mapped_value}"

@@ -220,6 +220,26 @@ def _format_model_name(model_key: str) -> str:
     }.get(model_key, model_key.replace("_", " "))
 
 
+def _format_explanation_feature_name(feature_name: str, raw_feature_columns: list[str]) -> str:
+    if feature_name.startswith("categorical__"):
+        payload = feature_name.split("categorical__", 1)[1]
+        matching_column = next(
+            (
+                column
+                for column in sorted(raw_feature_columns, key=len, reverse=True)
+                if payload.startswith(f"{column}_")
+            ),
+            None,
+        )
+        if matching_column is not None:
+            value = payload[len(matching_column) + 1 :].replace("_", " ")
+            return f"{matching_column.replace('_', ' ').title()} = {value.title()}"
+        return payload.replace("_", " ").title()
+    if feature_name.startswith("numeric__"):
+        return feature_name.replace("numeric__", "").replace("_", " ").title()
+    return feature_name.replace("_", " ").title()
+
+
 def predict_credit(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> dict:
     artifacts = load_artifacts(dataset)
     input_df = _normalise_applicant(applicant_data, artifacts["raw_feature_columns"], dataset)
@@ -275,8 +295,14 @@ def explain_prediction(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> 
     if values_df.empty:
         raise ValueError("Empty explanation output.")
 
-    strongest_positive = values_df.sort_values("contribution", ascending=False).iloc[0]["feature"]
-    strongest_negative = values_df.sort_values("contribution", ascending=True).iloc[0]["feature"]
+    strongest_positive = _format_explanation_feature_name(
+        values_df.sort_values("contribution", ascending=False).iloc[0]["feature"],
+        artifacts["raw_feature_columns"],
+    )
+    strongest_negative = _format_explanation_feature_name(
+        values_df.sort_values("contribution", ascending=True).iloc[0]["feature"],
+        artifacts["raw_feature_columns"],
+    )
     additivity_total = shap_result["base_value"] + float(values_df["contribution"].sum())
     return {
         "top_contributions": contributions,
