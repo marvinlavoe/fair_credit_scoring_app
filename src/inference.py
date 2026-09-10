@@ -243,6 +243,54 @@ def _format_explanation_feature_name(feature_name: str, raw_feature_columns: lis
     return feature_name.replace("_", " ").title()
 
 
+def _format_selected_category(column: str, value) -> str:
+    code = str(int(value)) if isinstance(value, (int, float, np.integer, np.floating)) else str(value)
+    labels = {str(code_value): label for label, code_value in TEXT_TO_CODE.get(column, {}).items()}
+    return labels.get(code, code.replace("_", " ").title())
+
+
+def _aggregate_shap_contributions(
+    shap_values,
+    feature_names: list[str],
+    raw_feature_columns: list[str],
+    input_df: pd.DataFrame,
+) -> pd.DataFrame:
+    grouped: dict[str, float] = {}
+    display_names: dict[str, str] = {}
+    sorted_columns = sorted(raw_feature_columns, key=len, reverse=True)
+
+    for feature_name, contribution in zip(feature_names, shap_values):
+        group_key = feature_name
+        display_name = _format_explanation_feature_name(feature_name, raw_feature_columns)
+        if feature_name.startswith("categorical__"):
+            payload = feature_name.split("categorical__", 1)[1]
+            matching_column = next(
+                (
+                    column
+                    for column in sorted_columns
+                    if payload.startswith(f"{column}_")
+                ),
+                None,
+            )
+            if matching_column is not None:
+                group_key = matching_column
+                selected_value = input_df.iloc[0][matching_column]
+                display_name = (
+                    f"{matching_column.replace('_', ' ').title()} = "
+                    f"{_format_selected_category(matching_column, selected_value)}"
+                )
+
+        grouped[group_key] = grouped.get(group_key, 0.0) + float(contribution)
+        display_names[group_key] = display_name
+
+    return pd.DataFrame(
+        {
+            "feature": [display_names[key] for key in grouped],
+            "contribution": [grouped[key] for key in grouped],
+        }
+    )
+
+
 def predict_credit(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> dict:
     artifacts = load_artifacts(dataset)
     input_df = _normalise_applicant(applicant_data, artifacts["raw_feature_columns"], dataset)
@@ -284,28 +332,27 @@ def explain_prediction(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> 
         X,
     )
     shap_values = shap_result["shap_values"]
-    contributions = get_top_feature_contributions(
+    values_df = _aggregate_shap_contributions(
         shap_values,
         artifacts["feature_names"],
-        top_n=10,
-    )
-    values_df = pd.DataFrame(
-        {
-            "feature": artifacts["feature_names"],
-            "contribution": shap_values,
-        }
+        artifacts["raw_feature_columns"],
+        input_df,
     )
     if values_df.empty:
         raise ValueError("Empty explanation output.")
 
-    strongest_positive = _format_explanation_feature_name(
-        values_df.sort_values("contribution", ascending=False).iloc[0]["feature"],
-        artifacts["raw_feature_columns"],
-    )
-    strongest_negative = _format_explanation_feature_name(
-        values_df.sort_values("contribution", ascending=True).iloc[0]["feature"],
-        artifacts["raw_feature_columns"],
-    )
+    top_values = values_df.assign(abs_contribution=values_df["contribution"].abs())
+    top_values = top_values.sort_values("abs_contribution", ascending=False).head(10)
+    contributions = [
+        {
+            "feature": row.feature,
+            "value": float(row.contribution),
+            "direction": "positive" if row.contribution >= 0 else "negative",
+        }
+        for row in top_values.itertuples(index=False)
+    ]
+    strongest_positive = values_df.sort_values("contribution", ascending=False).iloc[0]["feature"]
+    strongest_negative = values_df.sort_values("contribution", ascending=True).iloc[0]["feature"]
     additivity_total = shap_result["base_value"] + float(values_df["contribution"].sum())
     return {
         "top_contributions": contributions,
