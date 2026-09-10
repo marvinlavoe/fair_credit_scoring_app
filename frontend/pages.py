@@ -447,11 +447,19 @@ def render_shap_explanation_page() -> None:
     st.markdown("#### Feature Contribution Chart")
     render_shap_bar_chart(shap_values)
 
-    st.markdown(
-        "<div class='section-note'>When real SHAP values become available, this "
-        "interface can render matplotlib SHAP waterfall or force plots in this section.</div>",
-        unsafe_allow_html=True,
-    )
+    if USING_REAL_BACKEND and "base_value" in explanation:
+        st.caption(
+            f"SHAP base value: {explanation['base_value']:.4f} | "
+            f"Base value plus all contributions: {explanation['additivity_total']:.4f} | "
+            f"Model probability: {explanation['model_probability']:.4f} | "
+            f"Additivity error: {explanation['additivity_error']:.2e}"
+        )
+    else:
+        st.markdown(
+            "<div class='section-note'>Showing fallback explanation values because trained "
+            "SHAP artifacts are unavailable.</div>",
+            unsafe_allow_html=True,
+        )
     st.write(explanation["plain_language"])
 
 

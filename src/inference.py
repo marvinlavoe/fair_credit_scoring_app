@@ -10,10 +10,14 @@ from pytorch_tabnet.tab_model import TabNetClassifier
 
 try:
     from .config import DEFAULT_DATASET, get_dataset_config, get_model_paths, get_output_paths
+    from .explainability import generate_shap_explanation as generate_kernel_shap_explanation
     from .explainability import get_top_feature_contributions
+    from .preprocess import preprocess_data
 except ImportError:
     from config import DEFAULT_DATASET, get_dataset_config, get_model_paths, get_output_paths
+    from explainability import generate_shap_explanation as generate_kernel_shap_explanation
     from explainability import get_top_feature_contributions
+    from preprocess import preprocess_data
 
 
 TEXT_TO_CODE = {
@@ -247,15 +251,25 @@ def explain_prediction(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> 
     artifacts = load_artifacts(dataset)
     input_df = _normalise_applicant(applicant_data, artifacts["raw_feature_columns"], dataset)
     X = artifacts["preprocessor"].transform(input_df).astype(np.float32)
-    weights = np.asarray(X[0], dtype=float)
     if not artifacts["feature_names"]:
         raise ValueError("Missing feature names for explanation.")
 
-    contributions = get_top_feature_contributions(weights, artifacts["feature_names"], top_n=10)
+    background = preprocess_data(dataset=dataset)["X_train"]
+    shap_result = generate_kernel_shap_explanation(
+        artifacts["model"],
+        background,
+        X,
+    )
+    shap_values = shap_result["shap_values"]
+    contributions = get_top_feature_contributions(
+        shap_values,
+        artifacts["feature_names"],
+        top_n=10,
+    )
     values_df = pd.DataFrame(
         {
-            "feature": [item["feature"] for item in contributions],
-            "contribution": [float(item["value"]) for item in contributions],
+            "feature": artifacts["feature_names"],
+            "contribution": shap_values,
         }
     )
     if values_df.empty:
@@ -263,11 +277,16 @@ def explain_prediction(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> 
 
     strongest_positive = values_df.sort_values("contribution", ascending=False).iloc[0]["feature"]
     strongest_negative = values_df.sort_values("contribution", ascending=True).iloc[0]["feature"]
+    additivity_total = shap_result["base_value"] + float(values_df["contribution"].sum())
     return {
         "top_contributions": contributions,
         "values": values_df,
+        "base_value": shap_result["base_value"],
+        "model_probability": shap_result["explained_probability"],
+        "additivity_total": additivity_total,
+        "additivity_error": abs(additivity_total - shap_result["explained_probability"]),
         "plain_language": (
-            f"In this trained-model explanation for {dataset.upper()}, {strongest_positive} "
+            f"In this SHAP explanation for the trained {dataset.upper()} model, {strongest_positive} "
             f"contributes the strongest positive signal, while {strongest_negative} "
             "contributes the strongest negative signal for the current prediction."
         ),

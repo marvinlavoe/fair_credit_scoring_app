@@ -773,7 +773,7 @@ Short smoke-test metrics are not final model results because TabNet was trained 
 - The current fairness-aware method is sample reweighting, not a full adversarial neural debiasing model.
 - TabNet training on CPU can be slow.
 - SHAP KernelExplainer is computationally expensive, so the implementation uses a small sample size for practical execution.
-- The Streamlit frontend still uses mock visual values in some panels, but backend functions are available in `src/inference.py` for integration with trained artifacts.
+- The Streamlit frontend uses the trained backend for predictions and Kernel SHAP explanations when model artifacts are available; mock values remain only as a fallback when artifacts cannot be loaded.
 - If `data/german_credit_data.csv` is absent, the cleaner relies on the existing `data/german_clean.csv`.
 
 ## Future Improvements

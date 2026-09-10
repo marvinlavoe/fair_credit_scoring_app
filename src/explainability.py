@@ -56,6 +56,44 @@ def generate_shap_values(
     return shap_values
 
 
+def generate_shap_explanation(
+    model,
+    X_background,
+    X_instance,
+    background_size: int = 50,
+    nsamples: int = 100,
+) -> dict:
+    """Return Kernel SHAP values, base value, and explained probability."""
+    if X_background is None or len(X_background) == 0:
+        raise ValueError("X_background is required for SHAP explanations.")
+    if X_instance is None or len(X_instance) == 0:
+        raise ValueError("X_instance is required for SHAP explanations.")
+
+    background = np.asarray(X_background, dtype=np.float32)
+    instance = np.asarray(X_instance, dtype=np.float32)
+    if len(background) > background_size:
+        rng = np.random.default_rng(RANDOM_STATE)
+        sample_idx = rng.choice(len(background), size=background_size, replace=False)
+        background = background[sample_idx]
+
+    predict_positive = _positive_class_predict_fn(model)
+    explainer = shap.KernelExplainer(predict_positive, background)
+    raw_values = explainer.shap_values(instance, nsamples=nsamples)
+    values = np.asarray(raw_values, dtype=float)
+    if values.ndim > 1:
+        values = values[0]
+    if values.size == 0:
+        raise ValueError("Empty SHAP output generated.")
+
+    base_value = float(np.asarray(explainer.expected_value).reshape(-1)[0])
+    explained_probability = float(predict_positive(instance)[0])
+    return {
+        "shap_values": values,
+        "base_value": base_value,
+        "explained_probability": explained_probability,
+    }
+
+
 def get_top_feature_contributions(shap_values, feature_names, top_n: int = 10) -> list[dict]:
     values = np.asarray(shap_values)
     if values.ndim > 1:
