@@ -10,3 +10,4 @@ torch
 pytorch-tabnet
 joblib
 ucimlrepo
+pytest

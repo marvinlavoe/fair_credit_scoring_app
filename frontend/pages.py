@@ -192,6 +192,34 @@ def _format_real_fairness_metrics(raw_metrics: dict) -> list[dict]:
     ]
 
 
+def _fairness_comparison_frame(raw_metrics: dict, sensitive_attribute: str) -> pd.DataFrame:
+    labels = {
+        "logistic_regression": "Logistic Regression",
+        "tabnet_baseline": "TabNet Baseline",
+        "tabnet_debiased": "Fairness-Aware TabNet",
+    }
+    rows = []
+    for model_key, model_label in labels.items():
+        metric = next(
+            (
+                item
+                for item in raw_metrics.get(model_key, [])
+                if item.get("sensitive_attribute") == sensitive_attribute
+            ),
+            None,
+        )
+        if metric:
+            rows.append(
+                {
+                    "Model": model_label,
+                    "Demographic Parity Difference": metric.get("demographic_parity_difference"),
+                    "Equalized Odds Difference": metric.get("equalized_odds_difference"),
+                    "Disparate Impact Ratio": metric.get("disparate_impact_ratio"),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 def render_dashboard_page() -> None:
     st.subheader("Portfolio Overview")
     st.markdown(
@@ -469,7 +497,37 @@ def render_fairness_metrics_page() -> None:
     metrics = _format_real_fairness_metrics(raw_metrics) if USING_REAL_BACKEND else raw_metrics
 
     if USING_REAL_BACKEND:
-        st.caption("Showing saved fairness metrics for the trained debiased TabNet model using the `sex` sensitive attribute.")
+        available_attributes = sorted(
+            {
+                item.get("sensitive_attribute")
+                for model_metrics in raw_metrics.values()
+                for item in model_metrics
+                if item.get("sensitive_attribute")
+            }
+        )
+        selected_attribute = st.selectbox(
+            "Protected attribute",
+            available_attributes or ["sex"],
+            format_func=lambda value: value.replace("_", " ").title(),
+        )
+        selected_model = st.selectbox(
+            "Highlighted model",
+            ["tabnet_debiased", "tabnet_baseline", "logistic_regression"],
+            format_func=lambda value: {
+                "logistic_regression": "Logistic Regression",
+                "tabnet_baseline": "TabNet Baseline",
+                "tabnet_debiased": "Fairness-Aware TabNet",
+            }[value],
+        )
+        selected_metrics = {
+            selected_model: [
+                item
+                for item in raw_metrics.get(selected_model, [])
+                if item.get("sensitive_attribute") == selected_attribute
+            ]
+        }
+        metrics = _format_real_fairness_metrics(selected_metrics)
+        st.caption("Compare fairness metrics across all saved models for the selected protected attribute.")
 
     cols = st.columns(3)
     for col, metric in zip(cols, metrics):
@@ -481,12 +539,30 @@ def render_fairness_metrics_page() -> None:
                 metric["explanation"],
             )
 
-    st.markdown("### Baseline vs Fairness-Aware TabNet")
-    metric_comparison = get_metric_comparison()
-    if not metric_comparison.empty:
-        render_grouped_metric_chart(metric_comparison)
+    st.markdown("### Logistic Regression vs TabNet Models")
+    if USING_REAL_BACKEND:
+        fairness_comparison = _fairness_comparison_frame(raw_metrics, selected_attribute)
+        if not fairness_comparison.empty:
+            st.dataframe(
+                fairness_comparison.style.format(
+                    {
+                        "Demographic Parity Difference": "{:.3f}",
+                        "Equalized Odds Difference": "{:.3f}",
+                        "Disparate Impact Ratio": "{:.3f}",
+                    }
+                ),
+                hide_index=True,
+                width="stretch",
+            )
+            render_grouped_metric_chart(fairness_comparison)
+        else:
+            st.warning("Fairness metrics are not available for the selected protected attribute.")
     else:
-        st.warning("Model comparison metrics are not available yet. Run the backend training pipeline first.")
+        metric_comparison = get_metric_comparison()
+        if not metric_comparison.empty:
+            render_grouped_metric_chart(metric_comparison)
+        else:
+            st.warning("Model comparison metrics are not available yet. Run the backend training pipeline first.")
 
 
 def render_model_comparison_page() -> None:
