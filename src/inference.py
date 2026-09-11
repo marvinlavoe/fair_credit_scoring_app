@@ -135,6 +135,12 @@ def _load_tabnet(path):
     return model
 
 
+def _load_model(path, model_key: str):
+    if model_key == "logistic_regression":
+        return joblib.load(path)
+    return _load_tabnet(path)
+
+
 def _load_saved_metrics(dataset: str) -> dict:
     metrics_path = get_output_paths(dataset)["metrics"]
     if not metrics_path.exists():
@@ -143,22 +149,32 @@ def _load_saved_metrics(dataset: str) -> dict:
 
 
 def _resolve_decision_threshold(dataset: str, model_key: str) -> float:
+    if model_key == "logistic_regression":
+        return 0.50
     saved_metrics = _load_saved_metrics(dataset)
     if model_key in saved_metrics and "decision_threshold" in saved_metrics[model_key]:
         return FORCED_DECISION_THRESHOLD
     return FORCED_DECISION_THRESHOLD
 
 
-@lru_cache(maxsize=4)
-def load_artifacts(dataset: str = DEFAULT_DATASET):
+@lru_cache(maxsize=8)
+def load_artifacts(dataset: str = DEFAULT_DATASET, model_key: str | None = None):
     model_paths = get_model_paths(dataset)
-    model_path = model_paths["tabnet_debiased"]
-    model_key = "tabnet_debiased"
+    selected_model_key = model_key or "tabnet_debiased"
+    if selected_model_key not in {
+        "logistic_regression",
+        "tabnet_baseline",
+        "tabnet_debiased",
+    }:
+        raise ValueError(f"Unsupported model '{selected_model_key}'.")
+    model_path = model_paths[selected_model_key]
+    if not model_path.exists() and model_key is None:
+        selected_model_key = "tabnet_baseline"
+        model_path = model_paths[selected_model_key]
     if not model_path.exists():
-        model_path = model_paths["tabnet_baseline"]
-        model_key = "tabnet_baseline"
-    if not model_path.exists():
-        raise FileNotFoundError(f"No trained TabNet model found for dataset '{dataset}'.")
+        raise FileNotFoundError(
+            f"Missing trained model artifact for '{selected_model_key}' and dataset '{dataset}'."
+        )
 
     preprocessor_path = model_paths["preprocessor"]
     feature_columns_path = model_paths["raw_feature_columns"]
@@ -172,8 +188,8 @@ def load_artifacts(dataset: str = DEFAULT_DATASET):
 
     return {
         "dataset": dataset,
-        "model_key": model_key,
-        "model": _load_tabnet(model_path),
+        "model_key": selected_model_key,
+        "model": _load_model(model_path, selected_model_key),
         "model_path": model_path,
         "decision_threshold": _resolve_decision_threshold(dataset, model_key),
         "preprocessor": joblib.load(preprocessor_path),
@@ -291,8 +307,12 @@ def _aggregate_shap_contributions(
     )
 
 
-def predict_credit(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> dict:
-    artifacts = load_artifacts(dataset)
+def predict_credit(
+    applicant_data: dict,
+    dataset: str = DEFAULT_DATASET,
+    model_key: str | None = None,
+) -> dict:
+    artifacts = load_artifacts(dataset, model_key)
     input_df = _normalise_applicant(applicant_data, artifacts["raw_feature_columns"], dataset)
     X = artifacts["preprocessor"].transform(input_df).astype(np.float32)
     proba = artifacts["model"].predict_proba(X)[0]
@@ -318,8 +338,12 @@ def predict_credit(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> dict
     }
 
 
-def explain_prediction(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> dict:
-    artifacts = load_artifacts(dataset)
+def explain_prediction(
+    applicant_data: dict,
+    dataset: str = DEFAULT_DATASET,
+    model_key: str | None = None,
+) -> dict:
+    artifacts = load_artifacts(dataset, model_key)
     input_df = _normalise_applicant(applicant_data, artifacts["raw_feature_columns"], dataset)
     X = artifacts["preprocessor"].transform(input_df).astype(np.float32)
     if not artifacts["feature_names"]:
@@ -369,8 +393,12 @@ def explain_prediction(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> 
     }
 
 
-def generate_shap_explanation(applicant_data: dict, dataset: str = DEFAULT_DATASET) -> dict:
-    return explain_prediction(applicant_data, dataset=dataset)
+def generate_shap_explanation(
+    applicant_data: dict,
+    dataset: str = DEFAULT_DATASET,
+    model_key: str | None = None,
+) -> dict:
+    return explain_prediction(applicant_data, dataset=dataset, model_key=model_key)
 
 
 def get_fairness_metrics(dataset: str = DEFAULT_DATASET):

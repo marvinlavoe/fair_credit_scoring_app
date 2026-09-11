@@ -276,7 +276,14 @@ def render_predict_applicant_page() -> None:
             "trained backend artifacts are unavailable."
         )
 
+    model_options = {
+        "Fairness-Aware TabNet": "tabnet_debiased",
+        "TabNet Baseline": "tabnet_baseline",
+        "Logistic Regression": "logistic_regression",
+    }
+
     with st.form("applicant_form"):
+        selected_model = st.selectbox("Prediction model", list(model_options))
         personal, credit, financial = st.tabs(
             ["Personal Information", "Credit Information", "Financial Information"]
         )
@@ -428,8 +435,16 @@ def render_predict_applicant_page() -> None:
             "foreign_worker": foreign_worker,
         }
         st.session_state["applicant_data"] = applicant_data
-        st.session_state["prediction_result"] = predict_credit(applicant_data)
-        st.session_state["shap_explanation"] = generate_shap_explanation(applicant_data)
+        model_key = model_options[selected_model]
+        st.session_state["selected_model"] = selected_model
+        st.session_state["prediction_result"] = predict_credit(
+            applicant_data,
+            model_key=model_key,
+        )
+        st.session_state["shap_explanation"] = generate_shap_explanation(
+            applicant_data,
+            model_key=model_key,
+        )
 
     if "prediction_result" in st.session_state:
         st.markdown("### Decision Summary")
