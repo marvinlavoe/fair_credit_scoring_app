@@ -478,7 +478,14 @@ Saved outputs:
 ```text
 outputs/shap_summary.png
 outputs/shap_waterfall.png
+outputs/shap_report.json
+outputs/shap_report.json
 ```
+
+The SHAP report explains every test record with the fairness-aware TabNet model
+and records the first test applicant's creditworthy probability, largest positive
+and negative contributions, and the ten features with the highest mean absolute
+SHAP contribution across the test set.
 
 ## Backend Inference API
 

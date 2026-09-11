@@ -141,6 +141,7 @@ def get_output_paths(dataset: str = DEFAULT_DATASET) -> dict:
             "model_comparison": OUTPUT_DIR / "model_comparison.csv",
             "shap_summary": OUTPUT_DIR / "shap_summary.png",
             "shap_waterfall": OUTPUT_DIR / "shap_waterfall.png",
+            "shap_report": OUTPUT_DIR / "shap_report.json",
         }
     return {
         "metrics": OUTPUT_DIR / f"{dataset_key}_metrics.json",
@@ -148,4 +149,5 @@ def get_output_paths(dataset: str = DEFAULT_DATASET) -> dict:
         "model_comparison": OUTPUT_DIR / f"{dataset_key}_model_comparison.csv",
         "shap_summary": OUTPUT_DIR / f"{dataset_key}_shap_summary.png",
         "shap_waterfall": OUTPUT_DIR / f"{dataset_key}_shap_waterfall.png",
+        "shap_report": OUTPUT_DIR / f"{dataset_key}_shap_report.json",
     }

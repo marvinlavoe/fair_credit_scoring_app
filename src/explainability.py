@@ -111,6 +111,26 @@ def get_top_feature_contributions(shap_values, feature_names, top_n: int = 10) -
     ]
 
 
+def get_global_shap_importance(shap_values, feature_names, top_n: int = 10) -> list[dict]:
+    """Rank features by mean absolute SHAP contribution across records."""
+    values = np.asarray(shap_values, dtype=float)
+    if values.ndim == 1:
+        values = values.reshape(1, -1)
+    importance = pd.DataFrame(
+        {
+            "feature": feature_names,
+            "mean_abs_shap": np.mean(np.abs(values), axis=0),
+        }
+    ).sort_values("mean_abs_shap", ascending=False)
+    return [
+        {
+            "feature": row.feature,
+            "mean_abs_shap": float(row.mean_abs_shap),
+        }
+        for row in importance.head(top_n).itertuples(index=False)
+    ]
+
+
 def generate_shap_waterfall_plot(
     shap_values,
     feature_names,

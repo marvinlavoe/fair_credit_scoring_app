@@ -1,0 +1,108 @@
+{
+  "dataset": "german",
+  "model": "tabnet_debiased",
+  "test_records_explained": 200,
+  "background_records": 20,
+  "nsamples": 80,
+  "sample_applicant": {
+    "creditworthy_probability": 0.6205881834030151,
+    "top_positive_contributions": [
+      {
+        "feature": "categorical__employment_duration_1",
+        "value": 0.010355891802899324,
+        "direction": "positive"
+      }
+    ],
+    "top_negative_contributions": [
+      {
+        "feature": "categorical__checking_account_status_4",
+        "value": -0.05263146214905181,
+        "direction": "negative"
+      },
+      {
+        "feature": "numeric__number_of_dependents",
+        "value": -0.007598567870172531,
+        "direction": "negative"
+      },
+      {
+        "feature": "numeric__residence_duration",
+        "value": -0.005878045998921431,
+        "direction": "negative"
+      },
+      {
+        "feature": "categorical__employment_duration_5",
+        "value": -0.0033172470789118863,
+        "direction": "negative"
+      },
+      {
+        "feature": "categorical__savings_account_status_3",
+        "value": -0.0031880410979945413,
+        "direction": "negative"
+      },
+      {
+        "feature": "numeric__existing_credits",
+        "value": -0.0020865731710257864,
+        "direction": "negative"
+      },
+      {
+        "feature": "categorical__credit_history_0",
+        "value": -0.0016778761242371106,
+        "direction": "negative"
+      },
+      {
+        "feature": "categorical__credit_history_1",
+        "value": -0.0007225594736568189,
+        "direction": "negative"
+      },
+      {
+        "feature": "categorical__property_type_4",
+        "value": -0.0005817963333581602,
+        "direction": "negative"
+      }
+    ]
+  },
+  "global_mean_absolute_shap": [
+    {
+      "feature": "categorical__checking_account_status_4",
+      "mean_abs_shap": 0.0418757831828016
+    },
+    {
+      "feature": "numeric__loan_duration_months",
+      "mean_abs_shap": 0.02086567349657654
+    },
+    {
+      "feature": "categorical__loan_purpose_9",
+      "mean_abs_shap": 0.005727648471072606
+    },
+    {
+      "feature": "categorical__employment_duration_2",
+      "mean_abs_shap": 0.0045879784932560015
+    },
+    {
+      "feature": "numeric__existing_credits",
+      "mean_abs_shap": 0.004144815015002454
+    },
+    {
+      "feature": "categorical__property_type_1",
+      "mean_abs_shap": 0.00263527425613922
+    },
+    {
+      "feature": "numeric__age",
+      "mean_abs_shap": 0.002528316100434158
+    },
+    {
+      "feature": "numeric__residence_duration",
+      "mean_abs_shap": 0.0023482458694077087
+    },
+    {
+      "feature": "categorical__telephone_2",
+      "mean_abs_shap": 0.0019332099990293527
+    },
+    {
+      "feature": "categorical__job_type_3",
+      "mean_abs_shap": 0.0018891813519267273
+    }
+  ],
+  "summary_plot": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\shap_summary.png",
+  "waterfall_plot": "D:\\MY WORK\\A NEXT GIG\\SHAP\\fair_credit_scoring_app\\outputs\\shap_waterfall.png"
+}
