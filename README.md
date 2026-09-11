@@ -99,7 +99,11 @@ fair_credit_scoring_app/
 |   |-- fairness_results.json
 |   |-- model_comparison.csv
 |   |-- shap_summary.png
-|   `-- shap_waterfall.png
+|   |-- shap_waterfall.png
+|   `-- shap_report.json
+|-- tests/
+|   `-- test_pipeline.py
+|-- pytest.ini
 |-- src/
 |   |-- clean_headers.py
 |   |-- config.py
@@ -339,6 +343,19 @@ This model uses sample weights computed from:
 - Target class.
 - Sensitive group, currently `sex`.
 
+The weights use:
+
+$$
+w(a,y)=\frac{P(A=a)P(Y=y)}{P(A=a,Y=y)}
+$$
+
+The current training code passes the per-sample weights to
+`TabNetClassifier.fit(weights=sample_weights)`. In the inspected
+`pytorch-tabnet` implementation, these weights are used by a
+`WeightedRandomSampler` to sample training records with replacement. They are
+not multiplied directly into the loss function. The fairness-aware model is
+therefore trained on a rebalanced effective sample distribution.
+
 The sample weighting method is implemented in:
 
 ```text
@@ -425,6 +442,10 @@ Metrics include:
 - True positive rate by group.
 - False positive rate by group.
 
+The saved rerun contains fairness results for both `sex` and `age_group`. The
+reweighting is based on `sex`, so the fairness-aware model improves the
+sex-derived results but does not necessarily improve age-group fairness.
+
 Disparate impact interpretation:
 
 ```text
@@ -458,6 +479,7 @@ Supported functions include:
 - `generate_shap_waterfall_plot`
 - `generate_shap_summary_plot`
 - `get_top_feature_contributions`
+- `get_global_shap_importance`
 
 Because TabNet is not a tree model, the project uses:
 
@@ -465,7 +487,11 @@ Because TabNet is not a tree model, the project uses:
 shap.KernelExplainer
 ```
 
-To reduce computation time, SHAP uses a small background sample.
+To reduce computation time, SHAP uses a deterministic background sample of 20
+training records for artifact generation and 80 perturbation samples. The
+artifact pipeline explains every test record, reports the first test
+applicant's creditworthy probability and largest positive and negative
+contributions, and ranks features by mean absolute SHAP value.
 
 Generate SHAP artifacts with:
 
@@ -478,7 +504,6 @@ Saved outputs:
 ```text
 outputs/shap_summary.png
 outputs/shap_waterfall.png
-outputs/shap_report.json
 outputs/shap_report.json
 ```
 
@@ -498,12 +523,23 @@ src/inference.py
 Main functions:
 
 ```python
-load_artifacts()
-predict_credit(applicant_data: dict)
-explain_prediction(applicant_data: dict)
+load_artifacts(dataset="german", model_key=None)
+predict_credit(applicant_data: dict, dataset="german", model_key=None)
+explain_prediction(applicant_data: dict, dataset="german", model_key=None)
 get_fairness_metrics()
 get_model_comparison()
 ```
+
+The supported prediction models are:
+
+- `logistic_regression`
+- `tabnet_baseline`
+- `tabnet_debiased`
+
+The Streamlit applicant form lets the user select one of these models. The
+selected model is used for both prediction and the applicant-level SHAP
+explanation. Logistic Regression uses a `0.50` decision threshold; the TabNet
+models use the deployed `0.60` threshold.
 
 `predict_credit()` returns:
 
@@ -556,9 +592,10 @@ The frontend includes:
 - Sidebar navigation.
 - Dashboard overview.
 - Applicant input form.
+- Model selector for Logistic Regression, TabNet baseline, and fairness-aware TabNet.
 - Prediction result panel.
 - SHAP explanation panel.
-- Fairness metrics panel.
+- Fairness metrics panel with protected-attribute and model comparison controls.
 - Model comparison panel.
 - About and methodology page.
 
@@ -640,6 +677,7 @@ Expected outputs:
 models/tabnet_baseline.zip
 models/tabnet_debiased.zip
 outputs/model_comparison.csv
+outputs/shap_report.json
 ```
 
 ### 5. Run full pipeline
@@ -658,7 +696,12 @@ outputs/fairness_results.json
 outputs/model_comparison.csv
 outputs/shap_summary.png
 outputs/shap_waterfall.png
+outputs/shap_report.json
 ```
+
+The model comparison screen includes a majority-class baseline that always
+predicts the test-set majority label, in addition to Logistic Regression,
+TabNet baseline, and fairness-aware TabNet.
 
 ### 6. Run frontend
 
@@ -771,6 +814,7 @@ This verified:
 - Fairness results were generated.
 - Model comparison was generated.
 - SHAP summary and waterfall images were generated.
+- SHAP report data was generated, including global mean absolute importance.
 - `src/inference.py` returned frontend-ready predictions.
 
 Short smoke-test metrics are not final model results because TabNet was trained for only 5 epochs. For report-quality results, run the full 100-epoch training pipeline.
@@ -780,17 +824,18 @@ Short smoke-test metrics are not final model results because TabNet was trained 
 - The current fairness-aware method is sample reweighting, not a full adversarial neural debiasing model.
 - TabNet training on CPU can be slow.
 - SHAP KernelExplainer is computationally expensive, so the implementation uses a small sample size for practical execution.
-- The Streamlit frontend uses the trained backend for predictions and Kernel SHAP explanations when model artifacts are available; mock values remain only as a fallback when artifacts cannot be loaded.
+- Full-test SHAP artifact generation can be slow because KernelExplainer evaluates every test record.
+- The Streamlit frontend uses the trained backend for model-selected predictions and Kernel SHAP explanations when model artifacts are available; mock values remain only as a fallback when artifacts cannot be loaded.
+- Fairness metrics are calculated on the saved test split and are not changed by one individual applicant prediction.
 - If `data/german_credit_data.csv` is absent, the cleaner relies on the existing `data/german_clean.csv`.
 
 ## Future Improvements
 
-- Connect the Streamlit frontend directly to `src/inference.py` for live trained-model predictions.
 - Add a true adversarial debiasing neural network branch.
 - Add model selection between Logistic Regression, TabNet baseline, and reweighted TabNet.
 - Add dataset switching between German Credit and HELOC.
 - Add downloadable reports for prediction explanations and fairness metrics.
-- Add unit tests for preprocessing, fairness, inference, and artifact loading.
+- Expand automated tests for model-backed integration and full SHAP artifact generation.
 
 ## Disclaimer
 
